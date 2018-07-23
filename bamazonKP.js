@@ -87,10 +87,12 @@ function startBamazon() {
         var stockRequest = response.chooseUnits;
         var userPick = response.chooseItem;
         checkStock(userPick, stockRequest);
+        
     });
 }
 
 function checkStock(userPick, stockRequest) {
+
     connection.connect(function(err){
         connection.query('SELECT id, item, dept, price FROM bamazon.products WHERE id=?', userPick, function (err, res) {
             if (err) throw (err);
@@ -100,14 +102,18 @@ function checkStock(userPick, stockRequest) {
             var price = res.price;
             var total = stockRequest* price;
                             
-            
-            if(stockRequest < currentStock) {
-                console.log("Order successfully placed! Your total is " + total)
-                updateItemStock(userPick, (currentStock - stockRequest));
-            }
-            else {
+            console.log("Checking stock, please wait...");
+
+            if(stockRequest > currentStock) {
                 console.log("Sorry, we don't have enough in stock to complete your order. Please try again.");
                 startBamazon();
+            }
+            else {
+                
+                console.log("Order successfully placed! Your total is " + total)
+                updateItemStock(userPick, (currentStock - stockRequest));
+                startBamazon();
+                debug: true;
             }
         });
     });
@@ -117,20 +123,23 @@ function updateItemStock() {
 
     var postStock = currentStock - stockRequest;
 
-    connection.query(
-        "UPDATE bamazon.products SET ? WHERE ?",
-        [
-          {
-            currentStock: postStock
-          },
-          {
-            id: userPick
-          }
-        ],
-        function(err) {
-            if (err) throw (err);
+    connection.connect(function(err){
+        connection.query(
+            "UPDATE bamazon.products SET ? WHERE ?",
+            [
+            {
+                currentStock: postStock
+            },
+            {
+                id: userPick
+            }
+            ],
+            function(err) {
+                if (err) throw (err);
 
-            console.log("Stock updated!");
-        }
-      );
+                console.log("Stock updated!");
+            }
+        );
+    })
+    
 }
